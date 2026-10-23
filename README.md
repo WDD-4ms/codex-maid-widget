@@ -1,5 +1,12 @@
 # Codex Maid Widget
 
+## This fork: waiting-interaction reminders (Windows)
+
+Shows “Your answer” or “Your approval” inside the original thought bubble, using the character theme, typography, and scaling. The bubble closes when the request is resolved, with a manual dismiss button for the reminder.
+
+See [Waiting-interaction reminders](docs/ATTENTION.md) for setup, optional approval hooks, validation, and compatibility limits. The feature is integrated into the Windows source tree; the macOS implementation has not been ported. Upstream: [Feeesack/codex-maid-widget](https://github.com/Feeesack/codex-maid-widget).
+
+
 **English** | [简体中文](README.zh-CN.md)
 
 Contact: [feeesack9449@gmail.com](mailto:feeesack9449@gmail.com)

@@ -1,5 +1,12 @@
 # Codex 女仆额度挂件
 
+## 此 Fork：等待交互提醒（Windows）
+
+在原版角色思考气泡中显示“等你回答”或“等你授权”，沿用角色主题、字体与缩放。正常回答或授权处理结束后直接收起，气泡内也可手动收起提醒。
+
+使用方式、授权 hook 安装、已验证行为及兼容限制见 [等待交互提醒](docs/ATTENTION.zh-CN.md)。此功能目前仅接入 Windows 源码，macOS 实现尚未移植。原作者项目为 [Feeesack/codex-maid-widget](https://github.com/Feeesack/codex-maid-widget)。
+
+
 [English](README.md) | **简体中文**
 
 联系邮箱：[feeesack9449@gmail.com](mailto:feeesack9449@gmail.com)

@@ -109,3 +109,7 @@ Original upstream bytes, the complete MIT license and pinned provenance
 are retained in src/vendor/sortable/. SortableJS provides pointer tracking,
 card displacement animation and auto-scroll through its official options.
 No runtime CDN request or custom reordering animation engine is used.
+
+Waiting-interaction reminders adapt the asking / PermissionRequest event mapping
+from lokicorvus/CrossPet, Copyright (c) 2026 lokicorvus and CrossPet contributors.
+MIT license: licenses/CROSSPET-LICENSE.txt.

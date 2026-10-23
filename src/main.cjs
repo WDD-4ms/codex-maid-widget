@@ -46,6 +46,7 @@ const followSupported = process.platform === 'win32' && app.isPackaged && !demoM
 let followError = '';
 let snapshot = { status: 'connecting', buckets: [], today: null, lastTurn: null };
 let quitting = false, drag = null, refreshing = null, ownsControl = false;
+let attention = { questions: 0, approvals: 0, count: 0 }, attentionMonitor;
 let windowMode = null;
 let widgetManuallyHidden = false;
 let lastCorner = null;
@@ -56,7 +57,7 @@ function state() {
   const characters = library.list();
   const active = characters.find(item => item.id === settings.activeCharacterId && item.available) || characters.find(item => item.id === library.defaultId);
   const dock = cornerDockState();
-  return { settings, settingsRevision, snapshot, demo: demoMode, version: app.getVersion(), characters, followSupported, followError: t(followError), windowContainment: windowModeState(), cornerDock: dock, visualPose: visualPoseState(dock),
+  return { settings, settingsRevision, snapshot, attention, demo: demoMode, version: app.getVersion(), characters, followSupported, followError: t(followError), windowContainment: windowModeState(), cornerDock: dock, visualPose: visualPoseState(dock),
     activeCharacterId: active.id, characterUrl: active.url, characterName: i18n.characterName(active), accountManagement: accountManagement() };
 }
 function broadcast() {
@@ -736,7 +737,7 @@ async function startControl() {
     if (req.headers.origin || req.headers.authorization !== `Bearer ${token}`) { res.writeHead(403); res.end('{"error":"Forbidden"}'); return; }
     if (req.method === 'GET' && req.url === '/status') {
       const character = state();
-      res.end(JSON.stringify({ ...snapshot, visible: widget.isVisible(), demo: demoMode, version: app.getVersion(), activeCharacterId: character.activeCharacterId, characterName: character.characterName, characterCount: character.characters.length, followCodex:settings.followCodex, followSupported, followError, stayInCodexWindow:settings.stayInCodexWindow, windowContainment:windowModeState() })); return;
+      res.end(JSON.stringify({ ...snapshot, attention, visible: widget.isVisible(), demo: demoMode, version: app.getVersion(), activeCharacterId: character.activeCharacterId, characterName: character.characterName, characterCount: character.characters.length, followCodex:settings.followCodex, followSupported, followError, stayInCodexWindow:settings.stayInCodexWindow, windowContainment:windowModeState() })); return;
     }
     if (req.method !== 'POST' || req.url !== '/action') { res.writeHead(404); res.end('{}'); return; }
     let body = '';
@@ -793,12 +794,21 @@ else {
     globalShortcut.register('Control+Alt+Q', () => action('bounce'));
     globalShortcut.register('Control+Alt+Shift+M', () => updateSettings({ clickThrough: !settings.clickThrough }));
     await startControl(); show(); schedule(); refresh(); accountAlarm?.start();
+    if (!demoMode) {
+      const { AttentionMonitor } = require('./attention-monitor.cjs');
+      attentionMonitor = new AttentionMonitor({
+        codexHome: process.env.CODEX_HOME || path.join(os.homedir(), '.codex'), dataDir,
+        listFiles: () => source.local.listFiles(),
+        onChange: value => { attention = value; broadcastWidgetState(); },
+      });
+      void attentionMonitor.start().catch(() => {});
+    }
   }).catch(error => { dialog.showErrorBox(t('Codex 女仆启动失败'), t(error.message)); app.quit(); });
 }
 app.on('window-all-closed', () => {});
 app.on('before-quit', () => {
   cancelPose(true);
-  accountAlarm?.close();
+  accountAlarm?.close(); attentionMonitor?.close();
   quitting = true; clearInterval(timer); clearTimeout(authRefreshTimer); windowMode?.close(); stopAuthWatch?.(); desktopMonitor?.stop(); globalShortcut.unregisterAll(); source?.close(); controlServer?.close();
   if (ownsControl) try { fs.unlinkSync(path.join(dataDir, 'control.json')); } catch {}
 });

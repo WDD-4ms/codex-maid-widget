@@ -476,6 +476,9 @@ function reveal() {
   if (enabled && current?.settings.autoHideSeconds) hideTimer = setTimeout(() => setBubbleVisible(false), current.settings.autoHideSeconds * 1000);
 }
 function setBubbleVisible(visible) {
+  if (window.MaidAttention?.isActive()) visible = true;
+  if (current?.settings.showBubble === false) visible = false;
+  if (visible) $('bubble').classList.remove('attention-cleared');
   $('bubble').classList.toggle('hidden-bubble', !visible);
   $('bubble').inert = !visible;
   $('bubble').setAttribute('aria-hidden', String(!visible));
@@ -541,6 +544,7 @@ function playBounceSound() {
   }
 }
 function render(value) {
+  const previousAttention = window.MaidAttention?.isActive() || false;
   const initial = !current;
   const revision = Number.isSafeInteger(value.settingsRevision) ? value.settingsRevision : null;
   const olderSettings = revision !== null && revision < lastSettingsRevision;
@@ -620,7 +624,18 @@ function render(value) {
   if (initializedTurn && data.lastTurn?.timestamp && data.lastTurn.timestamp !== lastTurnTimestamp) { notice(t('最近一轮消耗 {tokens} tokens', {tokens:compact(data.lastTurn.tokens)})); bounce(); }
   if (data.status !== 'connecting') { lastTurnTimestamp = data.lastTurn?.timestamp || null; initializedTurn = true; }
   countdown(); if (bubbleChanged || characterChanged) reveal();
+  window.MaidAttention?.render(value.attention, value.settings);
+  if (window.MaidAttention?.isActive()) { clearTimeout(hideTimer); setBubbleVisible(true); }
+  else if (previousAttention) closeAttentionBubble();
 }
+let attentionHoverResumeAt = 0;
+function closeAttentionBubble() {
+  attentionHoverResumeAt = Date.now() + 500;
+  clearTimeout(hideTimer);
+  $('bubble').classList.add('attention-cleared');
+  setBubbleVisible(false);
+}
+window.addEventListener('maid-attention-dismissed', closeAttentionBubble);
 async function doRefresh() { $('refresh').animate([{rotate:'0deg'},{rotate:'360deg'}], {duration:650}); await window.maid.refresh(); if (current?.snapshot.error) notice(current.snapshot.error); else reveal(); }
 $('refresh').addEventListener('click', doRefresh);
 $('conversation-select').addEventListener('change', () => inspectConversation($('conversation-select').value === '@auto' ? null : $('conversation-select').value));
@@ -685,7 +700,7 @@ document.addEventListener('pointermove', e => {
   updateToolbarPointer(inside); window.maid.pointerRegion(inside);
 });
 document.documentElement.addEventListener('pointerleave', () => { updateToolbarPointer(false); window.maid.pointerRegion(false); });
-$('character').addEventListener('pointerenter', reveal);
+$('character').addEventListener('pointerenter', () => { if (Date.now() >= attentionHoverResumeAt) reveal(); });
 const initialState = window.MaidPresence.connect(window.maid);
 window.maid.onState(render); window.maid.onBounce(bounce); window.maid.onAccountReset?.(handleAccountReset); initialState.then(render);
 setInterval(() => { countdown(); if (mode === 'accounts') updateAccountTimers(); },1000);

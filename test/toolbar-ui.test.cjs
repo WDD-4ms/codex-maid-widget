@@ -6,15 +6,20 @@ const path=require('node:path');
 const vm=require('node:vm');
 // Layout/input behavior is exercised by check-toolbar-ui.cjs in real Chromium.
 // These boundary checks protect mirrored delivery and the stable four actions.
-test('toolbar delivery stays mirrored apart from platform viewport clipping',()=>{
-  const comparable=(name,source)=>name!=='widget.css'?source:source
-    .replace(/\/\*[\s\S]*?\*\//g,'')
-    // macOS prevents focus-induced root scrolling; all other CSS stays paired.
-    .replace(/(html,body\{[^}]*\boverflow:)(?:hidden|clip)(;)/,'$1viewport$2')
-    .replace(/^\s*\n/gm,'');
-  for(const name of ['widget.js','widget.css','index.html','preload.cjs'])assert.equal(
-    comparable(name,fs.readFileSync(path.join(__dirname,'../src',name),'utf8')),
-    comparable(name,fs.readFileSync(path.join(__dirname,'../macos/src',name),'utf8')),name);
+test('toolbar markup, styles, pointer behavior and preload stay mirrored',()=>{
+  // Compare the toolbar boundary; Windows also has a separate attention view.
+  const comparable=(name,source)=>{
+    source=source.replaceAll('\r\n','\n');
+    if(name==='widget.js')return source.slice(source.indexOf('let toolbarHideTimer;'),source.indexOf("$('character').addEventListener('pointerenter'"));
+    if(name==='widget.css')return source.slice(source.indexOf('.toolbar{'),source.indexOf('.notice{'));
+    if(name==='index.html')return source.match(/<nav\b[^>]*class="toolbar interactive"[^>]*>[\s\S]*?<\/nav>/)?.[0];
+    return source;
+  };
+  for(const name of ['widget.js','widget.css','index.html','preload.cjs']) {
+    const windows=comparable(name,fs.readFileSync(path.join(__dirname,'../src',name),'utf8'));
+    const mac=comparable(name,fs.readFileSync(path.join(__dirname,'../macos/src',name),'utf8'));
+    assert.ok(windows && mac,name+' toolbar boundary exists');assert.equal(windows,mac,name);
+  }
 });
 for(const folder of ['', 'macos/'])test(`${folder||'Windows'} toolbar retains four native keyboard-reachable actions`,()=>{
   const html=fs.readFileSync(path.join(__dirname,'..',folder,'src/index.html'),'utf8');

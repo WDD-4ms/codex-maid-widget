@@ -192,6 +192,7 @@ async function harness(variant, options = {}) {
       constructor({ dataDir }) { assert.equal(dataDir, dataHome); this.defaultId = character.id; }
       get(id) { return id === character.id ? character : undefined; } list() { return [character]; }
     } },
+    './attention-monitor.cjs': { AttentionMonitor: class { async start() {} close() {} } },
     './codex-data.cjs': { CodexDataSource: class { constructor() { return source; } } },
     './codex-desktop.cjs': {}, './windows-launch.cjs': {}, './macos-launch.cjs': {}, './desktop-observation.cjs': {},
     './auth-change-watch.cjs': { watchAuthChanges(home, callback) {

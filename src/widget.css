@@ -196,3 +196,16 @@ html:lang(en) .account-editor-hint{font-size:10px;line-height:13px}
 html:lang(en) .accounts-feedback{font-size:10px;line-height:13px;text-wrap:balance}
 html:lang(en) .accounts-empty{font-size:12px;line-height:18px;text-wrap:balance}
 html:lang(en) .notice{overflow-wrap:break-word}
+
+/* Waiting text shares the existing thought bubble and character theme. */
+.attention-view{position:absolute;inset:25px 40px 23px;display:flex;flex-direction:column;align-items:center;pointer-events:auto}
+.attention-view[hidden]{display:none}
+.attention-view header{flex:none}
+.attention-view p{display:flex;align-items:center;justify-content:center;flex:1;width:100%;margin:0;color:var(--theme-accent);font-size:32px;line-height:1.25;font-weight:800;text-wrap:balance}
+.attention-view small{color:var(--theme-muted);font-size:13px;line-height:20px;font-weight:600}
+.attention-view footer{margin-top:12px;margin-bottom:10px}
+.attention-view footer button{width:auto;min-width:86px;padding:0 12px;font-size:12px;font-weight:600}
+.bubble.needs-attention>.bubble-content{visibility:hidden;pointer-events:none;transition:none}
+html:lang(en) .attention-view p{font-size:28px}
+
+.bubble.attention-cleared>.bubble-content{visibility:hidden;transition:none}

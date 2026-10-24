@@ -37,20 +37,57 @@ async function desktopInventory({ signal, createInventory = options => require('
   finally { signal?.removeEventListener('abort', stop); stop(); }
 }
 
-// Explorer and login items need not inherit a terminal's PATH. Discover only
-// the CLI bundled beside an identity-verified desktop, without a shell, a disk
-// scan, authentication reads, or assumptions about the WindowsApps volume.
+// Current Windows desktop builds unpack their CLI into a versioned user directory.
+// Inspect only that declared layout, without a shell or a recursive disk scan.
+function managedCodexExecutable({ platform = process.platform, env = process.env, fileSystem = fs } = {}) {
+  const local = environmentValue(env, 'LOCALAPPDATA', platform);
+  if (platform !== 'win32' || !local) return null;
+  const directory = path.win32.join(local, 'OpenAI', 'Codex', 'bin');
+  const candidates = [];
+  try {
+    for (const name of fileSystem.readdirSync(directory)) {
+      if (!/^[a-f0-9]{16,64}$/i.test(name)) continue;
+      const file = path.win32.join(directory, name, 'codex.exe');
+      try {
+        const stat = fileSystem.statSync(file);
+        if (stat.isFile()) candidates.push({ file, modified: stat.mtimeMs || 0 });
+      } catch { /* A partial or obsolete runtime need not contain a CLI. */ }
+    }
+  } catch { return null; }
+  candidates.sort((a, b) => b.modified - a.modified || a.file.localeCompare(b.file));
+  return candidates[0]?.file || null;
+}
+
+function isManagedCodexPath(file, env, platform) {
+  const local = environmentValue(env, 'LOCALAPPDATA', platform);
+  if (platform !== 'win32' || !local || typeof file !== 'string' || !path.win32.isAbsolute(file)) return false;
+  const relative = path.win32.relative(path.win32.join(local, 'OpenAI', 'Codex', 'bin'), file);
+  return /^[a-f0-9]{16,64}\\codex\.exe$/i.test(relative);
+}
+
+// Explorer and login items need not inherit a terminal's PATH. Fall back to the
+// managed user runtime or a CLI beside an identity-verified desktop.
 async function resolveCodexExecutable(explicitPath, { find, platform = process.platform,
-  queryDesktop = desktopInventory, fileSystem = fs, signal, uid = process.getuid?.(), ...inventoryOptions } = {}) {
+  queryDesktop = desktopInventory, fileSystem = fs, env = process.env, signal, uid = process.getuid?.(), ...inventoryOptions } = {}) {
   if (signal?.aborted) throw aborted();
+  if (isManagedCodexPath(explicitPath, env, platform)) {
+    let exists = false;
+    try { exists = fileSystem.statSync(explicitPath).isFile(); } catch {}
+    if (!exists) {
+      const current = managedCodexExecutable({ platform, env, fileSystem });
+      if (current) return current;
+    }
+  }
   let missing;
   try { return find(explicitPath); }
   catch (error) {
     if (error?.code !== 'CLI_MISSING' || explicitPath || !['win32', 'darwin'].includes(platform)) throw error;
     missing = error;
   }
+  const managed = managedCodexExecutable({ platform, env, fileSystem });
+  if (managed) return managed;
   let observation;
-  try { observation = await withAbort(() => queryDesktop({ ...inventoryOptions, platform, signal, uid }), signal); }
+  try { observation = await withAbort(() => queryDesktop({ ...inventoryOptions, env, platform, signal, uid }), signal); }
   catch (error) { if (error?.code === 'ABORT_ERR') throw error; throw missing; }
   if (observation?.known !== true || !Array.isArray(observation.roots)) throw missing;
   for (const root of observation.roots) {
@@ -80,4 +117,4 @@ async function resolveCodexExecutable(explicitPath, { find, platform = process.p
   throw missing;
 }
 
-module.exports = { resolveCodexExecutable, environmentValue, desktopInventory, codexCommandInvocation };
+module.exports = { resolveCodexExecutable, environmentValue, desktopInventory, codexCommandInvocation, managedCodexExecutable };

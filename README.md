@@ -2,6 +2,8 @@
 
 ## This fork: waiting-interaction reminders (Windows)
 
+Windows discovers the desktop-managed CLI and recovers obsolete managed CLI overrides after Codex replaces its versioned runtime.
+
 Shows “Your answer” or “Your approval” inside the original thought bubble, using the character theme, typography, and scaling. The bubble closes when the request is resolved, with a manual dismiss button for the reminder.
 
 See [Waiting-interaction reminders](docs/ATTENTION.md) for setup, optional approval hooks, validation, and compatibility limits. The feature is integrated into the Windows source tree; the macOS implementation has not been ported. Upstream: [Feeesack/codex-maid-widget](https://github.com/Feeesack/codex-maid-widget).

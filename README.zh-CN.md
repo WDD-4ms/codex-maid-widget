@@ -2,6 +2,8 @@
 
 ## 此 Fork：等待交互提醒（Windows）
 
+Windows 会自动查找 Codex 桌面版解包的 CLI；若更新删除了旧版本目录，旧的托管 CLI 路径会自动恢复到可用版本。
+
 在原版角色思考气泡中显示“等你回答”或“等你授权”，沿用角色主题、字体与缩放。正常回答或授权处理结束后直接收起，气泡内也可手动收起提醒。
 
 使用方式、授权 hook 安装、已验证行为及兼容限制见 [等待交互提醒](docs/ATTENTION.zh-CN.md)。此功能目前仅接入 Windows 源码，macOS 实现尚未移植。原作者项目为 [Feeesack/codex-maid-widget](https://github.com/Feeesack/codex-maid-widget)。
